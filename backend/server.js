@@ -26,14 +26,28 @@ const insuranceRoutes = require("./routes/insuranceRoutes");
 // Express application
 const app = express();
 
+// Allowed frontend origins
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://road-mate-mern.vercel.app",
+];
+
 // Middleware
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Allow requests without an Origin (Postman, server-to-server)
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
 
+// Handle JSON and form data
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
