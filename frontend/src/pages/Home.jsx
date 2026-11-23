@@ -1,6 +1,8 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
+
 import {
   CarFront,
   ShieldCheck,
@@ -44,9 +46,9 @@ function Home() {
 
               <div className="d-flex flex-wrap gap-3 mt-4">
                 {/* GET STARTED BUTTON */}
-                <a href="/auth" className="btn rm-primary-btn">
+                <Link to="/auth" className="btn rm-primary-btn">
                   Get Started <ArrowRight size={18} />
-                </a>
+                </Link>
 
                 <a href="#features" className="btn rm-secondary-btn">
                   Explore RoadMate
@@ -181,7 +183,7 @@ function Home() {
         </div>
       </section>
 
-      {/* HOW ROADMate WORKS */}
+      {/* HOW ROADMATE WORKS */}
       <section className="rm-how-section" id="about">
         <div className="container">
           <div className="row align-items-center">
@@ -238,9 +240,9 @@ function Home() {
             </div>
 
             {/* JOIN ROADMATE BUTTON */}
-            <a href="/auth" className="btn rm-primary-btn">
+            <Link to="/auth" className="btn rm-primary-btn">
               Join RoadMate <ArrowRight size={18} />
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -302,9 +304,9 @@ function Feature({ icon, title, text }) {
 
         <p>{text}</p>
 
-        <a href="/auth">
+        <Link to="/auth">
           Explore <ArrowRight size={15} />
-        </a>
+        </Link>
       </div>
     </div>
   );
