@@ -2,7 +2,7 @@
 const validateSignup = (data) => {
   const errors = [];
 
-  const { name, email, password } = data;
+  const { name, email, password, role } = data;
 
   if (!name || !name.trim()) {
     errors.push("Name is required");
@@ -12,7 +12,7 @@ const validateSignup = (data) => {
 
   if (!email || !email.trim()) {
     errors.push("Email is required");
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
     errors.push("Invalid email format");
   }
 
@@ -20,6 +20,12 @@ const validateSignup = (data) => {
     errors.push("Password is required");
   } else if (password.length < 6) {
     errors.push("Password must contain at least 6 characters");
+  }
+
+  const allowedRoles = ["user", "serviceProvider"];
+
+  if (role && !allowedRoles.includes(role)) {
+    errors.push("Invalid registration role");
   }
 
   return errors;
@@ -30,6 +36,8 @@ const validateLogin = (data) => {
 
   if (!data.email || !data.email.trim()) {
     errors.push("Email is required");
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+    errors.push("Invalid email format");
   }
 
   if (!data.password) {

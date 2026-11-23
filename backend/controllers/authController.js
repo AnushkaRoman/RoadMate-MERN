@@ -7,10 +7,46 @@ const crypto = require("crypto");
 // ================= SIGNUP =================
 const signup = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, email and password are required",
+      });
+    }
+
+    // Normalize input
+    const normalizedName = name.trim();
     const normalizedEmail = email.toLowerCase().trim();
 
+    if (!normalizedName || !normalizedEmail) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and email cannot be empty",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least 6 characters",
+      });
+    }
+
+    // Allow only public registration roles
+    const allowedRoles = ["user", "serviceProvider"];
+    const selectedRole = role || "user";
+
+    if (!allowedRoles.includes(selectedRole)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid registration role",
+      });
+    }
+
+    // Check whether email already exists
     const existingUser = await User.findOne({
       email: normalizedEmail,
     });
@@ -22,17 +58,19 @@ const signup = async (req, res, next) => {
       });
     }
 
+    // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new user with selected role
     const user = await User.create({
-      name: name.trim(),
+      name: normalizedName,
       email: normalizedEmail,
       password: hashedPassword,
-      role: "user",
+      role: selectedRole,
       isActive: true,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Registration successful",
       user: {
@@ -42,6 +80,7 @@ const signup = async (req, res, next) => {
         role: user.role,
       },
     });
+
   } catch (error) {
     next(error);
   }
@@ -51,6 +90,13 @@ const signup = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
+    }
 
     const normalizedEmail = email.toLowerCase().trim();
 
@@ -65,7 +111,7 @@ const login = async (req, res, next) => {
       });
     }
 
-    // Only reject explicitly deactivated accounts
+    // Check account status
     if (user.isActive === false) {
       return res.status(403).json({
         success: false,
@@ -74,6 +120,7 @@ const login = async (req, res, next) => {
       });
     }
 
+    // Compare entered password with hashed password
     const isPasswordCorrect = await bcrypt.compare(
       password,
       user.password
@@ -86,6 +133,7 @@ const login = async (req, res, next) => {
       });
     }
 
+    // Generate JWT token
     const token = jwt.sign(
       {
         id: user._id,
@@ -97,7 +145,7 @@ const login = async (req, res, next) => {
       }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Login successful",
       token,
@@ -108,6 +156,7 @@ const login = async (req, res, next) => {
         role: user.role,
       },
     });
+
   } catch (error) {
     next(error);
   }
@@ -130,24 +179,28 @@ const forgotPassword = async (req, res, next) => {
       });
     }
 
+    // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
 
+    // Store hashed reset token
     user.resetPasswordToken = crypto
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
 
+    // Token expires after 15 minutes
     user.resetPasswordExpires = new Date(
       Date.now() + 15 * 60 * 1000
     );
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Password reset token generated",
       resetToken,
     });
+
   } catch (error) {
     next(error);
   }
@@ -158,11 +211,27 @@ const resetPassword = async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
 
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and new password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must contain at least 6 characters",
+      });
+    }
+
+    // Hash received reset token
     const hashedToken = crypto
       .createHash("sha256")
       .update(token)
       .digest("hex");
 
+    // Find user with valid reset token
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() },
@@ -175,17 +244,20 @@ const resetPassword = async (req, res, next) => {
       });
     }
 
+    // Update password
     user.password = await bcrypt.hash(newPassword, 10);
 
+    // Remove reset token after successful use
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Password reset successful. Please login.",
     });
+
   } catch (error) {
     next(error);
   }
@@ -216,11 +288,12 @@ const updateProfile = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Profile updated successfully",
       user,
     });
+
   } catch (error) {
     next(error);
   }
@@ -254,6 +327,7 @@ const changePassword = async (req, res, next) => {
       });
     }
 
+    // Verify current password
     const isMatch = await bcrypt.compare(
       currentPassword,
       user.password
@@ -266,15 +340,16 @@ const changePassword = async (req, res, next) => {
       });
     }
 
-    // Hash new password before saving
+    // Hash and save new password
     user.password = await bcrypt.hash(newPassword, 10);
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Password changed successfully",
     });
+
   } catch (error) {
     next(error);
   }

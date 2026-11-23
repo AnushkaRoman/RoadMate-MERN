@@ -43,7 +43,8 @@ function Home() {
               </p>
 
               <div className="d-flex flex-wrap gap-3 mt-4">
-                <a href="/signup" className="btn rm-primary-btn">
+                {/* GET STARTED BUTTON */}
+                <a href="/auth" className="btn rm-primary-btn">
                   Get Started <ArrowRight size={18} />
                 </a>
 
@@ -236,7 +237,8 @@ function Home() {
               </p>
             </div>
 
-            <a href="/signup" className="btn rm-primary-btn">
+            {/* JOIN ROADMATE BUTTON */}
+            <a href="/auth" className="btn rm-primary-btn">
               Join RoadMate <ArrowRight size={18} />
             </a>
           </div>
@@ -300,7 +302,7 @@ function Feature({ icon, title, text }) {
 
         <p>{text}</p>
 
-        <a href="/signup">
+        <a href="/auth">
           Explore <ArrowRight size={15} />
         </a>
       </div>
